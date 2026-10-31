@@ -1,0 +1,105 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+android {
+    namespace = "in.hiddenindia.app"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId "in.hiddenindia.app"
+        minSdkVersion 24
+        targetSdkVersion 35
+        versionCode 6
+        versionName "1.0.5"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+
+        // ---------------------------------------------------------------
+        // Backend API base URL — THE ONE place this is configured.
+        //
+        // This MUST be the URL of your deployed Hidden India Express backend
+        // (see backend/DEPLOYMENT.md), reachable over HTTPS from a physical
+        // phone. Do NOT use http://localhost — on a real device "localhost"
+        // means the phone itself, not your computer.
+        //
+        // Replace the placeholder below once the backend is deployed, e.g.:
+        //   buildConfigField "String", "API_BASE_URL", "\"https://tourism-3ev1.onrender.com/\""
+        // (Include the trailing slash — Retrofit requires it.)
+        buildConfigField "String", "API_BASE_URL", "\"https://tourism-3ev1.onrender.com/\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        compose true
+        buildConfig true
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+    implementation platform('androidx.compose:compose-bom:2024.10.01')
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+    implementation 'androidx.activity:activity-compose:1.9.3'
+    
+    // Compose UI
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    
+    // Navigation & Lifecycle
+    implementation 'androidx.navigation:navigation-compose:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'
+
+    // Image loading
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+    // Renders the AVATAR_PRESETS inline SVGs (ProfileScreen) pixel-for-pixel, same as web.
+    implementation 'io.coil-kt:coil-svg:2.7.0'
+
+    // JSON Parsing & Async
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
+    
+    // Splash screen
+    implementation 'androidx.core:core-splashscreen:1.0.1'
+
+    // Networking (Stage 3: backend API + auth)
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+
+    // Secure token storage (EncryptedSharedPreferences via MasterKey.Builder,
+    // which requires 1.1.0-alpha03+ — the 1.0.0 release only has the older,
+    // now-deprecated MasterKeys.getOrCreate() API).
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+}

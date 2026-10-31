@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Golden Sun Rays Behind Arch (Centered around 54, 48) -->
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M54,26 L56,33 L52,33 Z" />
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M65,31 L61,36 L58,33 Z" />
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M43,31 L46,36 L50,33 Z" />
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M70,40 L63,42 L63,38 Z" />
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M38,40 L45,42 L45,38 Z" />
+
+    <!-- Heritage Indian Archway Silhouette -->
+    <!-- Outer Dome & Arch Curve -->
+    <path
+        android:fillColor="#FF9933"
+        android:pathData="M54,30 C51,36 41,38 35,46 C32,50 32,56 32,76 L76,76 C76,56 76,50 73,46 C67,38 57,36 54,30 Z" />
+
+    <!-- Inner Keyhole Arch Opening (Deep contrast) -->
+    <path
+        android:fillColor="#0A1323"
+        android:pathData="M54,42 C52,46 44,48 40,54 C38,57 38,62 38,76 L70,76 C70,62 70,57 68,54 C64,48 56,46 54,42 Z" />
+
+    <!-- Lotus / Flame in inner archway -->
+    <path
+        android:fillColor="#FFCC80"
+        android:pathData="M54,52 C52,58 48,62 48,67 C48,70 51,72 54,72 C57,72 60,70 60,67 C60,62 56,58 54,52 Z" />
+    <path
+        android:fillColor="#FF9933"
+        android:pathData="M54,57 C53,61 51,64 51,67 C51,69 52,70 54,70 C56,70 57,69 57,67 C57,64 55,61 54,57 Z" />
+
+    <!-- Heritage Base Plinth -->
+    <path
+        android:fillColor="#FFE082"
+        android:pathData="M29,76 L79,76 L77,79 L31,79 Z" />
+</vector>

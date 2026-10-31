@@ -1,0 +1,44 @@
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---------- secrets (never commit) ----------
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.pem
+*.p12
+keystore.properties
+local.properties
+google-services.json
+
+# ---------- backend (Node) ----------
+backend/node_modules/
+backend/dist/
+backend/data/
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
+backend/npm-debug.log*
+
+# ---------- android ----------
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+*.hprof
+
+# ---------- python helper scripts ----------
+__pycache__/
+*.pyc

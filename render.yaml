@@ -1,0 +1,44 @@
+# Render Blueprint for the Hidden India backend.
+# Lives at the REPOSITORY ROOT; the Node service itself is in ./backend.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> select this GitHub repository.
+# Render reads this file, creates the service, and asks you for the secret values below.
+services:
+  - type: web
+    name: hidden-india-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    # esbuild/tsx/typescript are devDependencies, so install them for the build step.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # server/db.ts uses node:sqlite, which is only available without flags from Node 22.13.0.
+      - key: NODE_VERSION
+        value: 22.14.0
+      # Required for the AI trip planner / Ask-the-Place / translator.
+      - key: GROQ_API_KEY
+        sync: false
+      # Optional fallback AI provider.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Optional: override the Groq model (a safe default is built in).
+      - key: GROQ_MODEL
+        sync: false
+      # Optional: comma-separated extra web origins allowed by CORS (the Android app does not need this).
+      - key: EXTRA_ALLOWED_ORIGINS
+        sync: false
+    # ACCOUNTS / SAVED DATA: the app keeps users, sessions, favourites and itineraries in a SQLite
+    # file (data/hidden-india.db). On Render's FREE plan the disk is wiped on every deploy and
+    # restart, so that data is lost. To keep it, switch to a paid plan, uncomment the block below,
+    # and change `plan: free` above to `plan: starter`:
+    #
+    # disk:
+    #   name: hidden-india-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # and add this env var:
+    #   - key: DATA_DIR
+    #     value: /var/data
