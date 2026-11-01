@@ -1,4 +1,4 @@
-🇮🇳 Hidden India
+## 🇮🇳 Hidden India
 
 Explore India. Discover the Unseen.
 
@@ -13,7 +13,7 @@ An AI-powered travel and tourism platform designed to help travellers discover h
   <img src="https://img.shields.io/badge/Maps-OpenStreetMap-7EBC6F?style=for-the-badge&logo=openstreetmap&logoColor=white" />
 </p>---
 
-📲 Download the Android app
+## 📲 Download the Android app
 
 "Download the latest Hidden-India APK" (https://github.com/Amlan0p/Hidden-India/releases/latest)
 
