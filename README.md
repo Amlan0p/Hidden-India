@@ -26,7 +26,7 @@ An AI-powered travel and tourism platform designed to help travellers discover h
 
 ---
 
-✨ Features
+## ✨ Features
 
 - 🗺️ Interactive Maps – Explore destinations with OpenStreetMap and GPS-based location detection.
 - 🤖 AI Travel Assistant – Get destination recommendations and travel information.
@@ -38,7 +38,7 @@ An AI-powered travel and tourism platform designed to help travellers discover h
 - 📥 Offline Downloads – Access downloaded travel information without an internet connection.
 - 🔐 User Authentication – Personalized accounts and travel experiences.
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 Technology| Purpose
 Kotlin| Android development
@@ -51,7 +51,7 @@ OpenStreetMap| Interactive maps
 Geoapify| Nearby places discovery
 Render| Backend hosting
 
-🏗️ Project Structure
+## 🏗️ Project Structure
 
 Hidden-India/
 │
@@ -71,7 +71,7 @@ Hidden-India/
 ├── .gitignore
 └── .gitattributes
 
-🔐 Environment Configuration
+## 🔐 Environment Configuration
 
 The backend requires environment variables for external API integrations.
 
@@ -83,7 +83,7 @@ Configure these variables in your backend hosting environment.
 
 Never commit API keys, passwords or other secrets to GitHub.
 
-🚀 Development
+## 🚀 Development
 
 Android Application
 
@@ -100,11 +100,11 @@ npm install
 
 Configure the required environment variables, then start the backend using the development command defined in "package.json".
 
-🌱 Project Status
+## 🌱 Project Status
 
 Hidden India is an actively developed project. Features, integrations and performance are continuously being improved.
 
-🤝 Contributing
+## 🤝 Contributing
 
 Contributions, suggestions and bug reports are welcome!
 
@@ -112,12 +112,6 @@ Contributions, suggestions and bug reports are welcome!
 2. Create a feature branch.
 3. Commit your changes.
 4. Open a Pull Request.
-
-👨‍💻 Developer
-
-Amlan Kar
-
-GitHub: "@Amlan0p" (https://github.com/Amlan0p)
 
 ---
 
