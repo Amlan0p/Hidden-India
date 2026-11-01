@@ -19,7 +19,7 @@ An AI-powered travel and tourism platform designed to help travellers discover h
 
 ## 📲 Download the Android app
 
-"Download the latest Hidden-India APK" (https://github.com/Amlan0p/Hidden-India/releases/latest)
+["Download the latest Hidden-India APK"](https://github.com/Amlan0p/Hidden-India/releases/latest)
 
 1. Open the latest release and download the ".apk" file from Assets.
 2. Open the downloaded APK on your Android device.
