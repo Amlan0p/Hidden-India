@@ -51,26 +51,6 @@ OpenStreetMap| Interactive maps
 Geoapify| Nearby places discovery
 Render| Backend hosting
 
-## 🏗️ Project Structure
-
-Hidden-India/
-│
-├── android/
-│   ├── app/
-│   ├── gradle/
-│   └── tools/
-│
-├── backend/
-│   ├── server/
-│   ├── src/
-│   ├── package.json
-│   └── .env.example
-│
-├── render.yaml
-├── README.md
-├── .gitignore
-└── .gitattributes
-
 ## 🔐 Environment Configuration
 
 The backend requires environment variables for external API integrations.
