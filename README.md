@@ -13,7 +13,9 @@ An AI-powered travel and tourism platform designed to help travellers discover h
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
   <img src="https://img.shields.io/badge/AI-Groq-orange?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Maps-OpenStreetMap-7EBC6F?style=for-the-badge&logo=openstreetmap&logoColor=white" />
-</p>---
+</p>
+
+---
 
 ## 📲 Download the Android app
 
