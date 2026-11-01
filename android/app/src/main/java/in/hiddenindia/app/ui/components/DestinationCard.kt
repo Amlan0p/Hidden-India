@@ -88,19 +88,20 @@ fun DestinationCard(
                 .clickable(onClick = onCardClick)
         ) {
             val context = LocalContext.current
-            val imageModel = remember(destination.coverImage) {
+            val candidateUrl = destination.listImage
+            val imageModel = remember(candidateUrl) {
                 ImageRequest.Builder(context)
-                    .data(destination.coverImage)
+                    .data(candidateUrl)
                     .crossfade(300)
                     .build()
             }
-            var hasLoadError by remember(destination.coverImage) { mutableStateOf(false) }
+            var hasLoadError by remember(candidateUrl) { mutableStateOf(false) }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (destination.coverImage.isNotBlank() && !hasLoadError) {
+                if (candidateUrl.isNotBlank() && !hasLoadError) {
                     AsyncImage(
                         model = imageModel,
                         contentDescription = destination.name,
@@ -109,12 +110,12 @@ fun DestinationCard(
                         onError = { hasLoadError = true }
                     )
                 } else {
-                    // Cover missing or broken: look for a verified photo of this destination
-                    // (falls back to the same themed placeholder if none is found).
+                    // Cover missing or broken: look for a verified photo of this destination by record ID
                     WikiVerifiedImage(
                         query = destination.name,
                         category = "Destination",
                         area = destination.state,
+                        recordId = destination.id,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

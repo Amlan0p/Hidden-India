@@ -66,22 +66,30 @@ fun WikiVerifiedImage(
     offlineOnly: Boolean = false,
     area: String? = null,
     category: String? = null,
-    recordId: String? = null
+    recordId: String? = null,
+    isThumbnail: Boolean = true
 ) {
     val context = LocalContext.current
-    // The image comes from the verified image database by EXACT record ID. Without a record ID, or
-    // for a record with no verified image, there is nothing to show: the themed placeholder is used.
-    val imageResult by produceState<String?>(initialValue = null, recordId, offlineOnly) {
+    // The image comes from the verified image database by EXACT record ID.
+    val imageResult by produceState<String?>(initialValue = null, recordId, isThumbnail, offlineOnly) {
         value = if (recordId.isNullOrBlank()) null
-        else withContext(Dispatchers.IO) { ImageRepository.imageUrlFor(context, recordId) }
+        else withContext(Dispatchers.IO) {
+            if (isThumbnail) ImageRepository.listUrlFor(context, recordId)
+            else ImageRepository.imageUrlFor(context, recordId)
+        }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    var retryTrigger by remember { mutableStateOf(0) }
+    var hasLoadError by remember(imageResult, retryTrigger) { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
         val currentImage = imageResult
-        var hasLoadError by remember(currentImage) { mutableStateOf(false) }
 
         if (!currentImage.isNullOrEmpty() && !hasLoadError) {
-            val request = remember(currentImage, offlineOnly) {
+            val request = remember(currentImage, offlineOnly, retryTrigger) {
                 val builder = ImageRequest.Builder(context)
                     .data(currentImage)
                     .crossfade(300)
@@ -100,8 +108,12 @@ fun WikiVerifiedImage(
                 }
             )
         } else {
-            // Elegant themed placeholder — never random or Taj Mahal fallback
-            ThemedImagePlaceholder(query = query, category = category)
+            // Elegant themed placeholder — tapping retries if load failed
+            ThemedImagePlaceholder(
+                query = query,
+                category = category,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

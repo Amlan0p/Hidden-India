@@ -197,7 +197,7 @@ fun TripPlannerScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                             AsyncImage(
-                                model = selectedDestination?.coverImage,
+                                model = selectedDestination?.listImage,
                                 contentDescription = selectedDestination?.name,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))

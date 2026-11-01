@@ -133,7 +133,7 @@ fun DestinationPickerSheet(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                             AsyncImage(
-                                model = dest.coverImage,
+                                model = dest.listImage,
                                 contentDescription = dest.name,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))

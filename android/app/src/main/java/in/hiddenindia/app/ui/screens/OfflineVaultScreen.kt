@@ -252,10 +252,11 @@ fun OfflineVaultScreen(
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (dest.coverImage.isNotBlank()) {
-                                val imageModel: ImageRequest = remember(dest.coverImage, isOfflineMode) {
+                            val candidateUrl = dest.listImage
+                            if (candidateUrl.isNotBlank()) {
+                                val imageModel: ImageRequest = remember(candidateUrl, isOfflineMode) {
                                     val builder = ImageRequest.Builder(context)
-                                        .data(dest.coverImage)
+                                        .data(candidateUrl)
                                         .crossfade(true)
                                     if (isOfflineMode) {
                                         builder.networkCachePolicy(CachePolicy.DISABLED)

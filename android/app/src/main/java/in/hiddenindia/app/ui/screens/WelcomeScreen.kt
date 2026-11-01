@@ -565,9 +565,10 @@ private fun WelcomeCatalogCard(destination: Destination, onClick: () -> Unit, mo
             .clickable(onClick = onClick)
     ) {
         Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.6f)) {
-            var hasError by remember(destination.coverImage) { mutableStateOf(false) }
-            if (destination.coverImage.isNotBlank() && !hasError) {
-                AsyncImage(model = destination.coverImage, contentDescription = destination.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(), onError = { hasError = true })
+            val candidateUrl = destination.listImage
+            var hasError by remember(candidateUrl) { mutableStateOf(false) }
+            if (candidateUrl.isNotBlank() && !hasError) {
+                AsyncImage(model = candidateUrl, contentDescription = destination.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(), onError = { hasError = true })
             } else {
                 ThemedImagePlaceholder(
                     query = destination.name,

@@ -15,12 +15,15 @@ data class Place(
     @SerializedName("description") val description: String = "",
     @SerializedName("coordinates") val coordinates: Coordinates? = null,
     @SerializedName("image") val image: String = "",
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
     @SerializedName("estimatedCost") val estimatedCost: String = "",
     @SerializedName("bestTimeOfDay") val bestTimeOfDay: String = "",
     @SerializedName("insiderTip") val insiderTip: String = "",
     @SerializedName("isSecretGem") val isSecretGem: Boolean = false,
     @SerializedName("coordinateStatus") val coordinateStatus: String? = "verified"
-)
+) {
+    val listImage: String get() = if (!thumbnailUrl.isNullOrBlank()) thumbnailUrl else image
+}
 
 data class LocalFood(
     @SerializedName("id") val id: String? = null,
@@ -30,8 +33,11 @@ data class LocalFood(
     @SerializedName("priceRange") val priceRange: String = "",
     @SerializedName("vegetarian") val vegetarian: Boolean = true,
     @SerializedName("image") val image: String? = null,
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
     @SerializedName("coordinates") val coordinates: Coordinates? = null
-)
+) {
+    val listImage: String? get() = if (!thumbnailUrl.isNullOrBlank()) thumbnailUrl else image
+}
 
 data class LocalExperience(
     @SerializedName("id") val id: String = "",
@@ -43,8 +49,11 @@ data class LocalExperience(
     @SerializedName("impactScore") val impactScore: Int = 5,
     @SerializedName("category") val category: String = "",
     @SerializedName("image") val image: String? = null,
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
     @SerializedName("coordinates") val coordinates: Coordinates? = null
-)
+) {
+    val listImage: String? get() = if (!thumbnailUrl.isNullOrBlank()) thumbnailUrl else image
+}
 
 data class LocalPhrase(
     @SerializedName("id") val id: String = "",
@@ -92,6 +101,7 @@ data class Destination(
     @SerializedName("category") val category: String = "Heritage",
     @SerializedName("secondaryCategories") val secondaryCategories: List<String> = emptyList(),
     @SerializedName("coverImage") val coverImage: String = "",
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
     @SerializedName("description") val description: String = "",
     @SerializedName("longDescription") val longDescription: String = "",
     @SerializedName("loreTitle") val loreTitle: String? = null,
@@ -116,6 +126,9 @@ data class Destination(
     @SerializedName("culturalGuidelines") val culturalGuidelines: List<String> = emptyList(),
     @SerializedName("responsibleTips") val responsibleTips: List<String> = emptyList()
 ) {
+    val listImage: String
+        get() = if (!thumbnailUrl.isNullOrBlank()) thumbnailUrl else coverImage
+
     val formattedDownloadSizeMB: String
         get() = if (downloadSizeMB % 1.0 == 0.0) downloadSizeMB.toInt().toString() else String.format(java.util.Locale.US, "%.1f", downloadSizeMB)
 }

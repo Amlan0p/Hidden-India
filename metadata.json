@@ -1,0 +1,8 @@
+{
+  "name": "Hidden India",
+  "description": "Discover hidden destinations, culture, travel itineraries and gems across India.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

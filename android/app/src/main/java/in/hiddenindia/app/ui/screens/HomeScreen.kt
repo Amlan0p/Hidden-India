@@ -458,10 +458,11 @@ private fun HomeFeedCard(
                 .height(288.dp)
                 .clickable(onClick = onCardClick)
         ) {
-            var hasLoadError by remember(destination.coverImage) { mutableStateOf(false) }
-            if (destination.coverImage.isNotBlank() && !hasLoadError) {
+            val candidateUrl = destination.listImage
+            var hasLoadError by remember(candidateUrl) { mutableStateOf(false) }
+            if (candidateUrl.isNotBlank() && !hasLoadError) {
                 AsyncImage(
-                    model = destination.coverImage,
+                    model = candidateUrl,
                     contentDescription = destination.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().height(288.dp),

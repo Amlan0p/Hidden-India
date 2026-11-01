@@ -20,8 +20,19 @@ class OfflineImageInterceptor(private val context: Context) : Interceptor {
         val data = request.data
 
         if (data is String && (data.startsWith("http://") || data.startsWith("https://"))) {
-            val cachedFile = OfflineImageCache.getImageFile(context, data)
-            if (cachedFile.exists() && cachedFile.length() > 0) {
+            var cachedFile = OfflineImageCache.getImageFile(context, data)
+            if (!cachedFile.exists() || cachedFile.length() == 0L) {
+                // If requesting thumbnail and only original is cached (or vice-versa), match related file
+                if (data.contains("/thumb/")) {
+                    val origUrl = data.replace(Regex("/thumb(/.*?)/[^/]+$"), "$1")
+                    val origFile = OfflineImageCache.getImageFile(context, origUrl)
+                    if (origFile.exists() && origFile.length() > 0L) {
+                        cachedFile = origFile
+                    }
+                }
+            }
+
+            if (cachedFile.exists() && cachedFile.length() > 0L) {
                 val offlineRequest = request.newBuilder()
                     .data(cachedFile)
                     .build()

@@ -18,16 +18,12 @@ import java.util.concurrent.ConcurrentHashMap
  *   hidden_india_image_database_final.sqlite (bundled asset)
  *        -> ImageRepository
  *        -> record-ID lookup (loc_0001, place_loc_0001_1, food_loc_0001_1, exp_loc_0001_1)
- *        -> verified image_url
- *        -> existing Compose UI (through the Destination model's image fields)
+ *        -> verified image_url (full-resolution) and thumbnail_url (500px standard size)
+ *        -> existing Compose UI (through the Destination model's image and thumbnail fields)
  *
- * The database is the only source of image URLs. Records whose image_url is empty or whose
- * verification_status is not "verified" get NO image, and the UI shows its existing themed
- * placeholder. Nothing is searched on the web and nothing is substituted. URLs are used exactly
- * as stored (never rewritten, rebuilt or re-hosted).
- *
- * The database holds URLs and metadata only (no image files). It is opened read-only from a
- * private copy of the asset; the copy is refreshed when [IMAGE_DB_VERSION] changes.
+ * The database is the authoritative source of image URLs. Records whose image_url is empty
+ * or whose verification_status is not "verified" get NO image, and the UI displays a clean
+ * themed placeholder.
  */
 object ImageRepository {
     private const val TAG = "ImageRepository"
@@ -36,8 +32,8 @@ object ImageRepository {
     private const val PREFS = "image_database_state"
     private const val PREFS_KEY_VERSION = "installed_version"
 
-    /** Bump when the bundled .sqlite asset is replaced; the private copy is then refreshed. */
-    private const val IMAGE_DB_VERSION = 3
+    /** Bumping version to 4 ensures the private SQLite database is refreshed with updated thumbnail_url records. */
+    private const val IMAGE_DB_VERSION = 4
 
     const val STATUS_VERIFIED = "verified"
 
@@ -64,11 +60,14 @@ object ImageRepository {
         /** Full-size / detail image: always image_url (exact, untouched). */
         fun detailUrl(): String? = if (hasVerifiedImage) imageUrl else null
 
-        /** Thumbnail for lists: thumbnail_url when present and valid, otherwise image_url. */
+        /** Thumbnail for cards and list containers: thumbnail_url when present, otherwise derived 500px thumbnail or image_url. */
         fun listUrl(): String? {
             if (!hasVerifiedImage) return null
             val t = thumbnailUrl
-            return if (!t.isNullOrBlank() && (t.startsWith("https://") || t.startsWith("http://"))) t else imageUrl
+            if (!t.isNullOrBlank() && (t.startsWith("https://") || t.startsWith("http://"))) {
+                return t
+            }
+            return imageUrl?.let { makeWikimediaThumbnailUrl(it, 500) }
         }
     }
 
@@ -77,7 +76,10 @@ object ImageRepository {
     private val recordCache = LruCache<String, ImageRecord>(4096)
     private val missing = ConcurrentHashMap.newKeySet<String>()
     private val loggedFailures = ConcurrentHashMap.newKeySet<String>()
-    private val brokenUrls = ConcurrentHashMap.newKeySet<String>()
+
+    /** Cache permanent failures (HTTP 404/410) with an expiration timestamp (10 minutes TTL). */
+    private val permanentFailures = ConcurrentHashMap<String, Long>()
+    private const val FAILURE_CACHE_TTL_MS = 10 * 60 * 1000L
 
     // ------------------------------------------------------------------------------------
     // Database access
@@ -149,8 +151,11 @@ object ImageRepository {
         return null
     }
 
-    /** Verified image URL for a record ID, or null (placeholder). */
+    /** Verified full-size image URL for a record ID, or null (placeholder). */
     fun imageUrlFor(context: Context, recordId: String): String? = getRecord(context, recordId)?.detailUrl()
+
+    /** Verified thumbnail image URL for a record ID (or falls back to detail URL). */
+    fun listUrlFor(context: Context, recordId: String): String? = getRecord(context, recordId)?.listUrl()
 
     // ------------------------------------------------------------------------------------
     // Applying the database to the app's destination data
@@ -164,55 +169,101 @@ object ImageRepository {
         var unmatched: Int = 0
     )
 
-    private class Slim(val type: String, val name: String, val destinationId: String, val state: String, val url: String)
+    private class Slim(
+        val type: String,
+        val name: String,
+        val destinationId: String,
+        val state: String,
+        val imageUrl: String,
+        val thumbnailUrl: String
+    )
 
     /**
-     * Returns the same destinations with ONLY the image fields set from the database.
-     * Whatever image URLs the bundled JSON happens to contain are ignored. A record gets an image
-     * only if the database row has the SAME record ID, the same type, the same name and the same
-     * destination (so an image can never be attached to a different record).
+     * Constructs a compliant Wikimedia Commons thumbnail URL (500px bucket).
+     */
+    fun makeWikimediaThumbnailUrl(url: String, widthPx: Int = 500): String {
+        if (!url.startsWith("https://upload.wikimedia.org/wikipedia/commons/")) return url
+        val marker = "/wikipedia/commons/"
+        val idx = url.indexOf(marker)
+        if (idx == -1) return url
+        val path = url.substring(idx + marker.length)
+        if (path.startsWith("thumb/")) return url
+        val filename = path.substringAfterLast('/')
+        return "https://upload.wikimedia.org/wikipedia/commons/thumb/$path/${widthPx}px-$filename"
+    }
+
+    /**
+     * Returns the same destinations with verified image_url and thumbnail_url set from the database.
+     * Record-ID matching is strictly preserved: a record receives an image only if the database
+     * row has the exact same record ID, type, name, destination, and state.
      */
     fun applyImages(context: Context, destinations: List<Destination>, report: ApplyReport = ApplyReport()): List<Destination> {
         val database = database(context)
-        val verified = HashMap<String, Slim>(1024)
+        val verified = HashMap<String, Slim>(2700)
         if (database != null) {
-            // Only rows that actually carry a verified URL are read (all 2,617 in the current database).
             database.rawQuery(
-                "SELECT record_id, type, name, destination_id, state, image_url FROM image_records " +
+                "SELECT record_id, type, name, destination_id, state, image_url, thumbnail_url FROM image_records " +
                     "WHERE verification_status = 'verified' AND image_url IS NOT NULL AND image_url <> ''",
                 null
             ).use { c ->
                 while (c.moveToNext()) {
-                    verified[c.getString(0)] = Slim(c.getString(1).orEmpty(), c.getString(2).orEmpty(),
-                        c.getString(3).orEmpty(), c.getString(4).orEmpty(), c.getString(5).orEmpty())
+                    val rid = c.getString(0).orEmpty()
+                    val type = c.getString(1).orEmpty()
+                    val name = c.getString(2).orEmpty()
+                    val destId = c.getString(3).orEmpty()
+                    val state = c.getString(4).orEmpty()
+                    val imgUrl = c.getString(5).orEmpty()
+                    val thumbUrl = c.getString(6).orEmpty().ifBlank { makeWikimediaThumbnailUrl(imgUrl, 500) }
+                    verified[rid] = Slim(type, name, destId, state, imgUrl, thumbUrl)
                 }
             }
         }
 
-        fun pick(id: String?, type: String, name: String, destId: String, state: String): String {
+        fun pick(id: String?, type: String, name: String, destId: String, state: String): Pair<String, String> {
             report.records++
             val s = if (id.isNullOrBlank()) null else verified[id]
             if (s == null) {
                 report.placeholders++
                 logRecord(id, type, name, "", "no verified image -> placeholder")
-                return ""
+                return Pair("", "")
             }
             if (s.type != type || s.name != name || s.destinationId != destId || s.state != state) {
-                report.mismatches++; report.placeholders++
+                report.mismatches++
+                report.placeholders++
                 Log.w(TAG, "[IMAGE_DB] id=$id does not match the app record ($type/$name); image NOT applied")
-                return ""
+                return Pair("", "")
             }
             report.withImage++
-            logRecord(id, type, name, s.url, "verified")
-            return s.url
+            logRecord(id, type, name, s.imageUrl, "verified")
+            return Pair(s.imageUrl, s.thumbnailUrl)
         }
 
         val result = destinations.map { d ->
+            val (cover, coverThumb) = pick(d.id, "destination_cover", d.name, d.id, d.state)
             d.copy(
-                coverImage = pick(d.id, "destination_cover", d.name, d.id, d.state),
-                places = d.places.map { p -> p.copy(image = pick(p.id, "place", p.name, d.id, d.state)) },
-                localFoods = d.localFoods.map { f -> f.copy(image = pick(f.id, "food", f.name, d.id, d.state)) },
-                localExperiences = d.localExperiences.map { e -> e.copy(image = pick(e.id, "experience", e.title, d.id, d.state)) }
+                coverImage = cover,
+                thumbnailUrl = coverThumb.ifBlank { null },
+                places = d.places.map { p ->
+                    val (pImg, pThumb) = pick(p.id, "place", p.name, d.id, d.state)
+                    p.copy(
+                        image = pImg,
+                        thumbnailUrl = pThumb.ifBlank { null }
+                    )
+                },
+                localFoods = d.localFoods.map { f ->
+                    val (fImg, fThumb) = pick(f.id, "food", f.name, d.id, d.state)
+                    f.copy(
+                        image = fImg.ifBlank { null },
+                        thumbnailUrl = fThumb.ifBlank { null }
+                    )
+                },
+                localExperiences = d.localExperiences.map { e ->
+                    val (eImg, eThumb) = pick(e.id, "experience", e.title, d.id, d.state)
+                    e.copy(
+                        image = eImg.ifBlank { null },
+                        thumbnailUrl = eThumb.ifBlank { null }
+                    )
+                }
             )
         }
         report.unmatched = (verified.size - report.withImage).coerceAtLeast(0)
@@ -229,20 +280,42 @@ object ImageRepository {
     }
 
     // ------------------------------------------------------------------------------------
-    // Failure handling (no crash, no retry loop, record IDs logged)
+    // Failure handling with graceful classification and TTL expiration
     // ------------------------------------------------------------------------------------
 
-    /** Remember that a URL permanently failed (HTTP error) so it is not requested again this session. */
-    fun markBroken(url: String) { brokenUrls.add(url) }
+    /**
+     * Mark a failure. Only permanent errors (404 Not Found, 410 Gone) are cached
+     * with an expiration timestamp so they do not block retry after network recovery.
+     */
+    fun markFailure(url: String, statusCode: Int, errorMessage: String? = null) {
+        if (statusCode == 404 || statusCode == 410) {
+            permanentFailures[url] = System.currentTimeMillis()
+        }
+        ImageDiagnostics.recordFailure(url, statusCode, errorMessage)
+    }
 
-    fun isBroken(url: String): Boolean = brokenUrls.contains(url)
+    /**
+     * Check if a URL has a genuine, unexpired permanent failure (HTTP 404/410).
+     */
+    fun isPermanentlyBroken(url: String): Boolean {
+        val failedAt = permanentFailures[url] ?: return false
+        if (System.currentTimeMillis() - failedAt > FAILURE_CACHE_TTL_MS) {
+            permanentFailures.remove(url)
+            return false
+        }
+        return true
+    }
+
+    fun clearFailure(url: String) {
+        permanentFailures.remove(url)
+    }
 
     /** Logs the failed URL once, with the record ID(s) that use it (debug builds). */
     fun reportLoadFailure(context: Context, url: String) {
         if (!loggedFailures.add(url)) return
         if (!BuildConfig.DEBUG) return
         val database = database(context) ?: return
-        database.rawQuery("SELECT record_id, type, name FROM image_records WHERE image_url = ? LIMIT 5", arrayOf(url)).use { c ->
+        database.rawQuery("SELECT record_id, type, name FROM image_records WHERE image_url = ? OR thumbnail_url = ? LIMIT 5", arrayOf(url, url)).use { c ->
             while (c.moveToNext()) {
                 Log.w(TAG, "[IMAGE_DB] image failed to load: id=${c.getString(0)} type=${c.getString(1)} name=${c.getString(2)} url=$url")
             }
@@ -251,14 +324,14 @@ object ImageRepository {
 }
 
 /**
- * Coil interceptor: a URL that already failed with an HTTP error this session is not requested
- * again, so the UI settles on the placeholder instead of retrying while scrolling.
+ * Coil interceptor: checks if a URL has an active permanent failure (404/410).
+ * Temporary network errors (timeouts, 429 rate limits, 5xx server issues) are NEVER blocked.
  */
 class BrokenImageInterceptor : Interceptor {
     override suspend fun intercept(chain: Interceptor.Chain): ImageResult {
         val data = chain.request.data
-        if (data is String && ImageRepository.isBroken(data)) {
-            return ErrorResult(null, chain.request, IllegalStateException("image previously failed: $data"))
+        if (data is String && ImageRepository.isPermanentlyBroken(data)) {
+            return ErrorResult(null, chain.request, IllegalStateException("image permanently missing (404/410): $data"))
         }
         return chain.proceed(chain.request)
     }

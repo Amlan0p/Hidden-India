@@ -166,9 +166,10 @@ fun FavoritesScreen(
                                 .height(176.dp)
                                 .clickable { onOpenDestination(dest.id) }
                         ) {
-                            var hasError by remember(dest.coverImage) { mutableStateOf(false) }
-                            if (dest.coverImage.isNotBlank() && !hasError) {
-                                AsyncImage(model = dest.coverImage, contentDescription = dest.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(176.dp), onError = { hasError = true })
+                            val candidateUrl = dest.listImage
+                            var hasError by remember(candidateUrl) { mutableStateOf(false) }
+                            if (candidateUrl.isNotBlank() && !hasError) {
+                                AsyncImage(model = candidateUrl, contentDescription = dest.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(176.dp), onError = { hasError = true })
                             } else {
                                 ThemedImagePlaceholder(
                                     query = dest.name,

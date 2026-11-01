@@ -582,18 +582,19 @@ fun DestinationDetailScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column {
-                                if (place.image.isNotEmpty()) {
+                                val placeImg = place.listImage
+                                if (placeImg.isNotEmpty()) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(180.dp)
                                             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                                     ) {
-                                        var placeLoadFailed by remember(place.image) { mutableStateOf(false) }
+                                        var placeLoadFailed by remember(placeImg) { mutableStateOf(false) }
                                         if (!placeLoadFailed) {
                                             AsyncImage(
                                                 model = ImageRequest.Builder(context)
-                                                    .data(place.image)
+                                                    .data(placeImg)
                                                     .crossfade(true)
                                                     .build(),
                                                 contentDescription = place.name,
@@ -608,6 +609,7 @@ fun DestinationDetailScreen(
                                                 category = place.category,
                                                 area = "${destination.name}, ${destination.state}",
                                                 offlineOnly = isOfflineOnly,
+                                                recordId = place.id,
                                                 modifier = Modifier.fillMaxSize()
                                             )
                                         }
@@ -821,12 +823,13 @@ fun DestinationDetailScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column {
-                                if (!food.image.isNullOrEmpty()) {
-                                    var foodLoadFailed by remember(food.image) { mutableStateOf(false) }
+                                val foodImg = food.listImage
+                                if (!foodImg.isNullOrEmpty()) {
+                                    var foodLoadFailed by remember(foodImg) { mutableStateOf(false) }
                                     if (!foodLoadFailed) {
                                         AsyncImage(
                                             model = ImageRequest.Builder(context)
-                                                .data(food.image)
+                                                .data(foodImg)
                                                 .crossfade(true)
                                                 .build(),
                                             contentDescription = food.name,
@@ -844,6 +847,7 @@ fun DestinationDetailScreen(
                                             category = "Food",
                                             area = "${destination.name}, ${destination.state}",
                                             offlineOnly = isOfflineOnly,
+                                            recordId = food.id,
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(150.dp)
@@ -856,6 +860,7 @@ fun DestinationDetailScreen(
                                         category = "Food",
                                         area = "${destination.name}, ${destination.state}",
                                         offlineOnly = isOfflineOnly,
+                                        recordId = food.id,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(150.dp)
@@ -885,12 +890,13 @@ fun DestinationDetailScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column {
-                                if (!exp.image.isNullOrEmpty()) {
-                                    var expLoadFailed by remember(exp.image) { mutableStateOf(false) }
+                                val expImg = exp.listImage
+                                if (!expImg.isNullOrEmpty()) {
+                                    var expLoadFailed by remember(expImg) { mutableStateOf(false) }
                                     if (!expLoadFailed) {
                                         AsyncImage(
                                             model = ImageRequest.Builder(context)
-                                                .data(exp.image)
+                                                .data(expImg)
                                                 .crossfade(true)
                                                 .build(),
                                             contentDescription = exp.title,
@@ -908,6 +914,7 @@ fun DestinationDetailScreen(
                                             category = exp.category,
                                             area = "${destination.name}, ${destination.state}",
                                             offlineOnly = isOfflineOnly,
+                                            recordId = exp.id,
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(150.dp)
@@ -920,6 +927,7 @@ fun DestinationDetailScreen(
                                         category = exp.category,
                                         area = "${destination.name}, ${destination.state}",
                                         offlineOnly = isOfflineOnly,
+                                        recordId = exp.id,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(150.dp)

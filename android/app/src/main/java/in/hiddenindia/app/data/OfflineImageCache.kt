@@ -64,22 +64,27 @@ object OfflineImageCache {
         if (destination.coverImage.isNotBlank() && destination.coverImage.startsWith("http")) {
             urls.add(destination.coverImage)
         }
+        destination.thumbnailUrl?.takeIf { it.isNotBlank() && it.startsWith("http") }?.let { urls.add(it) }
+
         destination.places.forEach { place ->
             if (place.image.isNotBlank() && place.image.startsWith("http")) {
                 urls.add(place.image)
             }
+            place.thumbnailUrl?.takeIf { it.isNotBlank() && it.startsWith("http") }?.let { urls.add(it) }
         }
         destination.localFoods.forEach { food ->
             val img = food.image
             if (!img.isNullOrBlank() && img.startsWith("http")) {
                 urls.add(img)
             }
+            food.thumbnailUrl?.takeIf { it.isNotBlank() && it.startsWith("http") }?.let { urls.add(it) }
         }
         destination.localExperiences.forEach { exp ->
             val img = exp.image
             if (!img.isNullOrBlank() && img.startsWith("http")) {
                 urls.add(img)
             }
+            exp.thumbnailUrl?.takeIf { it.isNotBlank() && it.startsWith("http") }?.let { urls.add(it) }
         }
         return urls.toList()
     }

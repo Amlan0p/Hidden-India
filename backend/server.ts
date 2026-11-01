@@ -220,6 +220,57 @@ const IMAGE_CACHE_MAX_ENTRIES = 1500;
 const IMAGE_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 const serverImageMemoryCache = new Map<string, CachedImage>();
 
+const IMAGE_CACHE_DIR = path.join(process.env.DATA_DIR || path.join(process.cwd(), 'data'), 'image_cache');
+try {
+  if (!fs.existsSync(IMAGE_CACHE_DIR)) {
+    fs.mkdirSync(IMAGE_CACHE_DIR, { recursive: true });
+  }
+} catch {
+  // ignore file system errors
+}
+
+function getCacheKeyFilename(url: string): string {
+  let hash = 0;
+  for (let i = 0; i < url.length; i++) {
+    hash = ((hash << 5) - hash) + url.charCodeAt(i);
+    hash |= 0;
+  }
+  return `img_${Math.abs(hash).toString(16)}`;
+}
+
+function readDiskCache(url: string): CachedImage | null {
+  try {
+    const base = path.join(IMAGE_CACHE_DIR, getCacheKeyFilename(url));
+    const metaPath = `${base}.json`;
+    const dataPath = `${base}.bin`;
+    if (fs.existsSync(metaPath) && fs.existsSync(dataPath)) {
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      if (Date.now() - meta.timestamp < IMAGE_CACHE_TTL_MS) {
+        const buffer = fs.readFileSync(dataPath);
+        return { buffer, contentType: meta.contentType, timestamp: meta.timestamp, etag: meta.etag };
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function writeDiskCache(url: string, item: CachedImage): void {
+  try {
+    const base = path.join(IMAGE_CACHE_DIR, getCacheKeyFilename(url));
+    fs.writeFileSync(`${base}.bin`, item.buffer);
+    fs.writeFileSync(`${base}.json`, JSON.stringify({
+      contentType: item.contentType,
+      timestamp: item.timestamp,
+      etag: item.etag,
+      url
+    }));
+  } catch {
+    // ignore
+  }
+}
+
 // Helper to construct a simple ETag
 function generateETag(buffer: Buffer): string {
   let hash = 0;
@@ -324,7 +375,7 @@ app.get('/api/image-proxy', async (req: Request, res: Response) => {
     // fetch and return the contents of ANY URL on the server's behalf
     // (internal services, cloud metadata endpoints, etc.) — a classic SSRF
     // hole. Add more hosts here if you introduce another image source.
-    const ALLOWED_IMAGE_HOSTS = ['upload.wikimedia.org', 'images.unsplash.com'];
+    const ALLOWED_IMAGE_HOSTS = ['upload.wikimedia.org', 'images.unsplash.com', 'commons.wikimedia.org', 'en.wikipedia.org'];
     try {
       const { hostname } = new URL(targetUrl);
       if (!ALLOWED_IMAGE_HOSTS.includes(hostname)) {
@@ -334,8 +385,16 @@ app.get('/api/image-proxy', async (req: Request, res: Response) => {
       return res.status(400).send('Invalid url');
     }
 
-    // Check server in-memory cache first
-    const cached = serverImageMemoryCache.get(targetUrl);
+    // Check server in-memory cache first, then disk cache
+    let cached = serverImageMemoryCache.get(targetUrl);
+    if (!cached) {
+      const fromDisk = readDiskCache(targetUrl);
+      if (fromDisk) {
+        cached = fromDisk;
+        serverImageMemoryCache.set(targetUrl, cached);
+      }
+    }
+
     if (cached && (Date.now() - cached.timestamp < IMAGE_CACHE_TTL_MS)) {
       if (req.headers['if-none-match'] === cached.etag) {
         return res.status(304).end();
@@ -372,17 +431,19 @@ app.get('/api/image-proxy', async (req: Request, res: Response) => {
     const buffer = Buffer.from(arrayBuffer);
     const etag = generateETag(buffer);
 
-    // Store in cache
+    // Store in memory and persistent disk cache
     if (serverImageMemoryCache.size >= IMAGE_CACHE_MAX_ENTRIES) {
       const firstKey = serverImageMemoryCache.keys().next().value;
       if (firstKey) serverImageMemoryCache.delete(firstKey);
     }
-    serverImageMemoryCache.set(targetUrl, {
+    const cachedItem = {
       buffer,
       contentType,
       timestamp: Date.now(),
       etag,
-    });
+    };
+    serverImageMemoryCache.set(targetUrl, cachedItem);
+    writeDiskCache(targetUrl, cachedItem);
 
     if (req.headers['if-none-match'] === etag) {
       return res.status(304).end();
@@ -1480,10 +1541,6 @@ app.get('/api/health', (req: Request, res: Response) => {
 function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Hidden India backend API running at http://0.0.0.0:${PORT}`);
-    // Run cache pre-warming in background to improve image response latency.
-    setTimeout(() => {
-      prewarmTopImages().catch(err => console.error('Prewarm error:', err));
-    }, 100);
   });
 }
 
