@@ -4,6 +4,8 @@ import android.util.Log
 import `in`.hiddenindia.app.network.EmergencyFacility
 import `in`.hiddenindia.app.network.NearestEmergencyResponse
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -43,17 +45,19 @@ class DirectOsmEmergencyService(
         withContext(Dispatchers.IO) {
             var activeProvider: String? = null
 
-            // Query hospitals (10km default, 50km fallback)
-            val hospitalResult = fetchAmenityWithFallback("hospital", userLat, userLng) { provider ->
-                if (activeProvider == null) activeProvider = provider
-            }
-
-            // Cooldown between amenity searches gives Overpass dispatcher time to release the rate-limit slot
-            delay(2500)
-
-            // Query police stations (10km default, 50km fallback)
-            val policeResult = fetchAmenityWithFallback("police", userLat, userLng) { provider ->
-                if (activeProvider == null) activeProvider = provider
+            // Query hospitals and police stations simultaneously in parallel
+            val (hospitalResult, policeResult) = coroutineScope {
+                val hDeferred = async {
+                    fetchAmenityWithFallback("hospital", userLat, userLng) { provider ->
+                        if (activeProvider == null) activeProvider = provider
+                    }
+                }
+                val pDeferred = async {
+                    fetchAmenityWithFallback("police", userLat, userLng) { provider ->
+                        if (activeProvider == null) activeProvider = provider
+                    }
+                }
+                hDeferred.await() to pDeferred.await()
             }
 
             val hospitals = hospitalResult.first
@@ -89,16 +93,19 @@ class DirectOsmEmergencyService(
         userLng: Double,
         onProviderSuccess: (String) -> Unit
     ): Pair<List<EmergencyFacility>, String?> {
-        // First try 10 km (10000m)
-        val initial = fetchAmenity(amenity, 10000, userLat, userLng, onProviderSuccess)
+        // Initial search radius: 5 km (5000m)
+        val initial = fetchAmenity(amenity, 5000, userLat, userLng, onProviderSuccess)
         if (initial.first.isNotEmpty()) {
             return initial
         }
 
-        // Brief delay before 50km fallback search
-        delay(1500)
+        // Expand radius to 15 km if insufficient results in 5 km
+        val secondary = fetchAmenity(amenity, 15000, userLat, userLng, onProviderSuccess)
+        if (secondary.first.isNotEmpty()) {
+            return secondary
+        }
 
-        // If no named facility within 10 km, perform one 50 km fallback search
+        // Fallback to 50 km for remote rural regions
         return fetchAmenity(amenity, 50000, userLat, userLng, onProviderSuccess)
     }
 

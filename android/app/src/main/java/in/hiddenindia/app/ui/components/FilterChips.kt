@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import `in`.hiddenindia.app.ui.theme.HiddenIndiaTextStyles
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.sp
 
 /**
@@ -62,11 +63,12 @@ fun FilterSection(
                         .clickable { onItemSelected(item) }
                         .padding(horizontal = 14.dp, vertical = 7.dp)
                 ) {
+                    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
                     Text(
                         text = item,
                         style = HiddenIndiaTextStyles.labelCaps.copy(letterSpacing = 0.sp),
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isSelected) (if (isDarkTheme) Color.Black else Color.White) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

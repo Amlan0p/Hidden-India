@@ -45,6 +45,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
@@ -226,38 +228,57 @@ fun ProfileScreen(
             SettingsSectionLabel("APPEARANCE")
             SettingsCard {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { themeController.toggle() }
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                            Icon(if (themeController.isDark) Icons.Filled.DarkMode else Icons.Filled.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        }
-                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text(if (themeController.isDark) "Electric Dark Mode" else "Warm Sunlit Light Mode", fontFamily = PlayfairDisplay, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                if (themeController.isDark) "High contrast neon heritage palette" else "High contrast warm terracotta & sage palette",
-                                fontFamily = JetBrainsMono, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(width = 48.dp, height = 26.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable { themeController.toggle() }
-                            .padding(2.dp)
+                    Row(
+                        modifier = Modifier.weight(1f).padding(end = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                                .align(if (themeController.isDark) Alignment.CenterEnd else Alignment.CenterStart)
-                        )
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (themeController.isDark) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column(modifier = Modifier.padding(start = 12.dp)) {
+                            Text(
+                                if (themeController.isDark) "AMOLED Dark Mode" else "Warm Sunlit Light Mode",
+                                fontFamily = PlayfairDisplay,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                if (themeController.isDark) "Pure black background with warm orange accents" else "Warm terracotta & sand palette",
+                                fontFamily = JetBrainsMono,
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
+                    Switch(
+                        checked = themeController.isDark,
+                        onCheckedChange = { themeController.toggle() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        modifier = Modifier.testTag("switch_theme")
+                    )
                 }
             }
 

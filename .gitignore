@@ -5,6 +5,8 @@ Thumbs.db
 *.iml
 .vscode/
 *.swp
+*.tmp
+*.temp
 
 # ---------- secrets (never commit) ----------
 .env
@@ -18,23 +20,26 @@ keystore.properties
 local.properties
 google-services.json
 
-# ---------- backend (Node) ----------
+# ---------- dependencies ----------
+node_modules/
 backend/node_modules/
-backend/dist/
-backend/data/
-backend/*.db
-backend/*.db-wal
-backend/*.db-shm
-backend/npm-debug.log*
 
-# ---------- android ----------
+# ---------- build outputs & caches ----------
+.gradle/
 android/.gradle/
+build/
 android/build/
 android/app/build/
 android/app/release/
 android/captures/
 android/.externalNativeBuild/
 android/.cxx/
+backend/dist/
+backend/data/
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
+backend/npm-debug.log*
 *.apk
 *.aab
 *.hprof

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
-import `in`.hiddenindia.app.ui.theme.DarkSurface
+import `in`.hiddenindia.app.ui.theme.DarkBackground
 import `in`.hiddenindia.app.ui.theme.LightPrimary
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -95,7 +96,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeController = rememberThemeController()
             val isDark = themeController.isDark
-            val topBarColor = if (isDark) DarkSurface else LightPrimary
+            val topBarColor = if (isDark) DarkBackground else LightPrimary
 
             HiddenIndiaTheme(darkTheme = isDark) {
                 Surface(
@@ -103,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Top bar strip: matches dark blue in dark mode, orange in light mode
+                        // Top bar strip: matches pure AMOLED black in dark mode, orange in light mode
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -336,18 +337,10 @@ fun AppNavigationHost(
                 AppBottomNavigation(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
-                        if (route == Screen.Discover.route) {
-                            // Tapping Discover tab ALWAYS takes the user straight to Discover / Home,
-                            // clearing overlays and sub-screens so the user is never stuck
-                            navController.navigate(Screen.Discover.route) {
-                                popUpTo(Screen.Discover.route) {
-                                    inclusive = false
-                                }
-                                launchSingleTop = true
-                            }
-                        } else {
+                        val popped = navController.popBackStack(route, inclusive = false)
+                        if (!popped) {
                             navController.navigate(route) {
-                                popUpTo(Screen.Discover.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
                                 launchSingleTop = true

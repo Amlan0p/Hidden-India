@@ -17,24 +17,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Talks to the real backend's /api/ai/ endpoints (backend/server.ts).
- * No local/fake AI, no keyword matching, no simulated delays — every call
- * here is a real network request to Groq/Gemini via the backend. None of
- * these endpoints require authentication (confirmed from the backend
- * source — no requireAuth middleware on any /api/ai/ route), so this
- * repository doesn't touch TokenStorage directly; it reuses the same
- * shared ApiClient/AuthInterceptor as AuthRepository (which will still
- * attach a Bearer token if the user happens to be logged in — harmless,
- * the backend simply ignores it here).
+ * AI Repository for Hidden India.
+ * All AI capabilities (trip planner, Ask-the-Place, translator, AI status)
+ * are served through the secure Render backend (/api/ai/ endpoints).
+ * The backend manages Groq API credentials securely in its server environment;
+ * no API keys or third-party AI secrets are embedded in the Android client.
  */
 class AiRepository(context: Context) {
 
     private val api: ApiService = ApiClient.create(context.applicationContext)
 
+    /**
+     * Checks AI service health and availability from the backend.
+     */
     suspend fun getStatus(): ApiResult<AiStatusResponse> = withContext(Dispatchers.IO) {
         safeApiCall { api.getAiStatus() }
     }
 
+    /**
+     * Ask-the-Place cultural travel queries and conversational guide.
+     */
     suspend fun askPlace(
         destinationId: String?,
         question: String,
@@ -51,6 +53,9 @@ class AiRepository(context: Context) {
         }
     }
 
+    /**
+     * Multi-day personalized itinerary planner with grounded destination activities.
+     */
     suspend fun planTrip(
         destinationId: String,
         days: Int,
@@ -71,11 +76,22 @@ class AiRepository(context: Context) {
         }
     }
 
+    /**
+     * Cultural linguist translator with phonetic transliteration and etiquette tips.
+     */
     suspend fun translate(
         text: String,
         sourceLang: String = "English",
         targetLang: String = "Hindi"
     ): ApiResult<TranslateResponse> = withContext(Dispatchers.IO) {
-        safeApiCall { api.translate(TranslateRequest(text = text, sourceLang = sourceLang, targetLang = targetLang)) }
+        safeApiCall {
+            api.translate(
+                TranslateRequest(
+                    text = text,
+                    sourceLang = sourceLang,
+                    targetLang = targetLang
+                )
+            )
+        }
     }
 }

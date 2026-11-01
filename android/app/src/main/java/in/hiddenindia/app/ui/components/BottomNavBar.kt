@@ -77,7 +77,7 @@ fun AppBottomNavigation(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.98f))
             .border(width = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .height(64.dp)

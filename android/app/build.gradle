@@ -26,15 +26,34 @@ android {
         // means the phone itself, not your computer.
         //
         // Replace the placeholder below once the backend is deployed, e.g.:
-        //   buildConfigField "String", "API_BASE_URL", "\"https://tourism-3ev1.onrender.com/\""
-        // (Include the trailing slash — Retrofit requires it.)
-        buildConfigField "String", "API_BASE_URL", "\"https://tourism-3ev1.onrender.com/\""
+        //   buildConfigField "String", "API_BASE_URL", "\"https://hidden-india-backend.onrender.com/\""
+        buildConfigField "String", "API_BASE_URL", "\"https://hidden-india-backend.onrender.com/\""
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+            storeFile file(keystorePath)
+            storePassword System.getenv("STORE_PASSWORD")
+            keyAlias "upload"
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+        debugConfig {
+            storeFile file("${rootDir}/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debugConfig
         }
     }
 

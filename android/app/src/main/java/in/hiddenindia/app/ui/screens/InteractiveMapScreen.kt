@@ -3,6 +3,7 @@ package `in`.hiddenindia.app.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import `in`.hiddenindia.app.data.FreshLocationProvider
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,19 +113,19 @@ fun InteractiveMapScreen(
         locationError = null
         scope.launch {
             try {
-                val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as LocationManager
-                val providers = lm.getProviders(true)
-                val loc = providers.mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time }
-                if (loc == null) {
-                    locationError = "Unable to detect GPS position. Please check location permissions."
-                } else {
-                    userCoords = loc.latitude to loc.longitude
+                val fix = FreshLocationProvider.getFreshLocation(context, timeoutMs = 8_000L)
+                if (fix != null) {
+                    userCoords = fix.latitude to fix.longitude
                     if (allDestinations.isNotEmpty()) {
-                        nearest = GeoUtils.findNearestDestination(loc.latitude, loc.longitude, allDestinations)
+                        nearest = GeoUtils.findNearestDestination(fix.latitude, fix.longitude, allDestinations)
                     }
+                } else {
+                    locationError = "Location unavailable. Please enable GPS or select a destination manually."
                 }
             } catch (e: SecurityException) {
                 locationError = "Location permission not granted."
+            } catch (e: Exception) {
+                locationError = "Unable to detect location: ${e.message}"
             } finally {
                 isLocating = false
             }
@@ -141,7 +142,7 @@ fun InteractiveMapScreen(
 
     val isMyLocation = selectedDestId == "MY_LOCATION"
     val currentDest: Destination? = if (isMyLocation) {
-        nearest?.first ?: allDestinations.firstOrNull()
+        if (userCoords != null) nearest?.first else null
     } else {
         allDestinations.find { it.id == selectedDestId } ?: allDestinations.firstOrNull()
     }
@@ -257,7 +258,10 @@ fun InteractiveMapScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (isMyLocation) "\uD83D\uDCCD MY LOCATION" else "${currentDest?.name}, ${currentDest?.state}",
+                            text = if (isMyLocation) {
+                                if (userCoords != null && currentDest != null) "\uD83D\uDCCD MY LOCATION (${currentDest.name})"
+                                else "\uD83D\uDCCD MY LOCATION (GPS Disabled)"
+                            } else "${currentDest?.name ?: ""}, ${currentDest?.state ?: ""}",
                             fontFamily = JetBrainsMono, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
                             color = if (isMyLocation) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
                         )

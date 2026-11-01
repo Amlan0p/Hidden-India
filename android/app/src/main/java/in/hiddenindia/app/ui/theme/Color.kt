@@ -24,27 +24,44 @@ val LightSurfaceContainerHigh = Color(0xFFEAE8E7)     // --color-surface-contain
 val LightOutlineVariant = Color(0xFFDBC2B0)           // --color-outline-variant
 val Gold = Color(0xFFD4AF37)                          // --color-gold (same in both themes)
 
-// ---- Dark (.dark) ----
-val DarkSurface = Color(0xFF0A1323)                   // --color-surface
-val DarkOnSurface = Color(0xFFDAE2F9)                 // --color-on-surface
-val DarkOnSurfaceVariant = Color(0xFF90A0C8)          // --color-on-surface-variant
-val DarkPrimary = Color(0xFF20FF8C)                   // --color-primary
-val DarkPrimaryDark = Color(0xFF008F47)               // --color-primary-dark
-val DarkPrimaryContainer = Color(0xFF20FF8C)          // --color-primary-container
-val DarkOnPrimaryContainer = Color(0xFF00391A)        // --color-on-primary-container
-val DarkTertiary = Color(0xFF20FF8C)                  // --color-tertiary
-val DarkTertiaryContainer = Color(0xFF13243A)         // --color-tertiary-container
-val DarkOnTertiaryContainer = Color(0xFF9CCBFB)       // --color-on-tertiary-container
-val DarkSurfaceContainerLow = Color(0xFF0F1A2E)       // --color-surface-container-low
-val DarkSurfaceContainer = Color(0xFF131C2C)          // --color-surface-container
-val DarkSurfaceContainerHigh = Color(0xFF172030)      // --color-surface-container-high
-val DarkOutlineVariant = Color(0x1AFFFFFF)            // --color-outline-variant: rgba(255,255,255,0.1)
+// ---- Dark: AMOLED Black + Orange Accent Palette ----
+val DarkBackground = Color(0xFF000000)                // Main background: pure AMOLED black (#000000)
+val DarkSecondaryBackground = Color(0xFF080808)       // Secondary background (#080808)
+val DarkCard = Color(0xFF101010)                      // Card background (#101010)
+val DarkElevatedSurface = Color(0xFF181818)           // Elevated surface (#181818)
+val DarkInputBackground = Color(0xFF141414)           // Input background (#141414)
+
+val DarkPrimary = Color(0xFFFF8C00)                   // Primary orange (#FF8C00)
+val DarkPrimaryDark = Color(0xFFE67E00)               // Pressed orange (#E67E00)
+val DarkSecondaryOrange = Color(0xFFFFA726)           // Secondary orange (#FFA726)
+val DarkPrimaryContainer = Color(0xFFFF8C00)          // Primary container (#FF8C00)
+val DarkOnPrimary = Color(0xFF000000)                 // Black text for high contrast on orange
+val DarkOnPrimaryContainer = Color(0xFF000000)        // Black text for high contrast on orange container
+
+val DarkTertiary = Color(0xFFFFA726)                  // Warm orange (#FFA726)
+val DarkTertiaryContainer = Color(0xFF181818)         // Elevated surface container (#181818)
+val DarkOnTertiaryContainer = Color(0xFFFFA726)       // Warm orange text
+
+val DarkSurface = Color(0xFF101010)                   // Cards and surfaces: near-black #101010
+val DarkOnSurface = Color(0xFFFFFFFF)                 // Primary text: White (#FFFFFF)
+val DarkOnSurfaceVariant = Color(0xFFB3B3B3)          // Secondary text: Soft grey (#B3B3B3)
+val DarkMutedText = Color(0xFF777777)                 // Muted text: #777777
+
+val DarkSurfaceContainerLowest = Color(0xFF000000)    // Pure AMOLED black (#000000)
+val DarkSurfaceContainerLow = Color(0xFF080808)       // Secondary background (#080808)
+val DarkSurfaceContainer = Color(0xFF101010)          // Card background (#101010)
+val DarkSurfaceContainerHigh = Color(0xFF181818)      // Elevated surface (#181818)
+val DarkSurfaceContainerHighest = Color(0xFF222222)   // #222222
+val DarkOutlineVariant = Color(0xFF292929)            // Divider and borders (#292929)
+val DarkOutline = Color(0xFF777777)                   // Muted border / outline (#777777)
+val DarkError = Color(0xFFFF5252)                     // Error (#FF5252)
+val DarkSuccess = Color(0xFF4CAF50)                   // Success (#4CAF50)
 
 // Misc raw values used verbatim around the web app (glass panels, glows, leaflet chrome)
 val LightGlassBg = Color(0xD9FBF9F8)                  // rgba(251,249,248,0.85)
-val DarkGlassBg = Color(0xD90A1323)                   // rgba(10,19,35,0.85)
+val DarkGlassBg = Color(0xEB000000)                   // AMOLED translucent black
 val LightGlowShadow = Color(0x99FF9933)               // rgba(255,153,51,0.6)
-val DarkGlowShadow = Color(0x9920FF8C)                // rgba(32,255,140,0.6)
+val DarkGlowShadow = Color(0x33FF8C00)                // Subtle warm orange shadow (no neon glow)
 
 // ---- Back-compat bridge for existing screen code ----
 // Every screen file (DiscoverScreen, ProfileScreen, DestinationDetailScreen, etc.) was

@@ -21,6 +21,9 @@ services:
       # Required for the AI trip planner / Ask-the-Place / translator.
       - key: GROQ_API_KEY
         sync: false
+      # Geoapify Places API key for ultra-fast nearby hospital & police station discovery.
+      - key: GEOAPIFY_API_KEY
+        sync: false
       # Optional fallback AI provider.
       - key: GEMINI_API_KEY
         sync: false

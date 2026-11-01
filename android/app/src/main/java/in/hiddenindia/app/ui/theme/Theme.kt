@@ -43,33 +43,35 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = LightOutlineVariant
 )
 
-// Direct port of the .dark block in the web app's src/index.css.
+// Direct port of the .dark block in the web app's src/index.css — AMOLED Black + Orange Accent.
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
-    onPrimary = DarkOnPrimaryContainer,
+    onPrimary = DarkOnPrimary,
     primaryContainer = DarkPrimaryContainer,
     onPrimaryContainer = DarkOnPrimaryContainer,
-    secondary = DarkTertiary,
-    onSecondary = DarkSurface,
-    secondaryContainer = DarkSurfaceContainerHigh,
-    onSecondaryContainer = DarkOnSurface,
+    secondary = DarkSecondaryOrange,
+    onSecondary = DarkOnPrimary,
+    secondaryContainer = DarkElevatedSurface,
+    onSecondaryContainer = DarkSecondaryOrange,
     tertiary = DarkTertiary,
-    onTertiary = DarkSurface,
+    onTertiary = DarkOnPrimary,
     tertiaryContainer = DarkTertiaryContainer,
     onTertiaryContainer = DarkOnTertiaryContainer,
-    background = DarkSurface,
+    background = DarkBackground,
     onBackground = DarkOnSurface,
     surface = DarkSurface,
     onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceContainer,
+    surfaceVariant = DarkInputBackground,
     onSurfaceVariant = DarkOnSurfaceVariant,
-    surfaceContainerLowest = DarkSurface,
+    surfaceContainerLowest = DarkSurfaceContainerLowest,
     surfaceContainerLow = DarkSurfaceContainerLow,
     surfaceContainer = DarkSurfaceContainer,
     surfaceContainerHigh = DarkSurfaceContainerHigh,
-    surfaceContainerHighest = DarkSurfaceContainerHigh,
-    outline = DarkOnSurfaceVariant,
-    outlineVariant = DarkOutlineVariant
+    surfaceContainerHighest = DarkSurfaceContainerHighest,
+    outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
+    error = DarkError,
+    onError = Color.White
 )
 
 // Exposes the app's *actual* active theme (driven by ThemeController, i.e. the user's
@@ -89,9 +91,9 @@ fun HiddenIndiaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            val topBarColor = if (darkTheme) DarkSurface else LightPrimary
+            val topBarColor = if (darkTheme) DarkBackground else LightPrimary
             window.statusBarColor = topBarColor.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = if (darkTheme) DarkBackground.toArgb() else colorScheme.background.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme

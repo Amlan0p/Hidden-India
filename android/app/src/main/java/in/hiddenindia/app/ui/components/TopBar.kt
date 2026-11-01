@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import `in`.hiddenindia.app.ui.theme.HiddenIndiaTextStyles
 import `in`.hiddenindia.app.ui.theme.JetBrainsMono
+import `in`.hiddenindia.app.ui.theme.LightPrimary
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.LocationOn
@@ -102,8 +103,8 @@ fun HiddenIndiaTopBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
-            .border(width = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0f))
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.98f))
+            .border(width = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -276,10 +277,13 @@ fun HiddenIndiaTopBar(
             }
         }
 
-        // "Available Offline" sub-strip
+        // "Available Offline" sub-strip (Adaptive color: lighter orange with white text in light mode, orange with black text in dark mode)
+        val bannerBg = if (isDarkTheme) Color(0xFFFF8C00) else LightPrimary
+        val bannerFg = if (isDarkTheme) Color.Black else Color.White
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(bannerBg)
                 .clickable { onOfflineStripClick() }
                 .padding(horizontal = 16.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -288,13 +292,14 @@ fun HiddenIndiaTopBar(
             Icon(
                 Icons.Filled.Circle,
                 contentDescription = null,
-                tint = if (isOfflineMode) Color(0xFFF59E0B) else MaterialTheme.colorScheme.tertiary,
+                tint = bannerFg,
                 modifier = Modifier.size(8.dp)
             )
             Text(
                 text = if (isOfflineMode) "Strict Offline Test Active • Zero Network" else "Available Offline",
                 style = HiddenIndiaTextStyles.labelCaps,
-                color = if (isOfflineMode) Color(0xFFB45309) else MaterialTheme.colorScheme.onTertiaryContainer
+                color = bannerFg,
+                fontWeight = FontWeight.Bold
             )
         }
     }

@@ -31,6 +31,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.EditLocationAlt
 import androidx.compose.material.icons.filled.EmergencyShare
 import androidx.compose.material.icons.filled.GpsFixed
@@ -575,9 +576,48 @@ fun EmergencySOSScreen(onBack: () -> Unit, viewModel: MainViewModel? = null) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            EmergencyContactCard(Icons.Filled.LocalHospital, Color(0xFFDC2626), "HOSPITAL / EMERGENCY HEALTHCARE", info.hospitalName, info.hospitalAddress, info.hospitalNumber) { dial(info.hospitalNumber) }
+            fun openDirections(lat: Double?, lng: Double?, name: String, address: String) {
+                try {
+                    val uri = if (lat != null && lng != null) {
+                        Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(name)})")
+                    } else {
+                        Uri.parse("geo:0,0?q=${Uri.encode("$name, $address")}")
+                    }
+                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Directions map app unavailable", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            val currentHospital = liveFacilities?.hospital
+            val currentPolice = liveFacilities?.police
+
+            EmergencyContactCard(
+                icon = Icons.Filled.LocalHospital,
+                accent = Color(0xFFDC2626),
+                label = "HOSPITAL / EMERGENCY HEALTHCARE",
+                name = info.hospitalName,
+                address = info.hospitalAddress,
+                number = info.hospitalNumber,
+                onCall = { dial(info.hospitalNumber) },
+                onDirections = if (currentHospital != null) {
+                    { openDirections(currentHospital.lat, currentHospital.lng, currentHospital.name, currentHospital.address ?: "") }
+                } else null
+            )
             Spacer(modifier = Modifier.height(10.dp))
-            EmergencyContactCard(Icons.Filled.LocalPolice, MaterialTheme.colorScheme.tertiary, "POLICE STATION / CONTROL ROOM", info.policeStationName, info.policeAddress, info.policeNumber) { dial(info.policeNumber) }
+            EmergencyContactCard(
+                icon = Icons.Filled.LocalPolice,
+                accent = MaterialTheme.colorScheme.tertiary,
+                label = "POLICE STATION / CONTROL ROOM",
+                name = info.policeStationName,
+                address = info.policeAddress,
+                number = info.policeNumber,
+                onCall = { dial(info.policeNumber) },
+                onDirections = if (currentPolice != null) {
+                    { openDirections(currentPolice.lat, currentPolice.lng, currentPolice.name, currentPolice.address ?: "") }
+                } else null
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -621,7 +661,16 @@ private fun ModeTab(label: String, icon: androidx.compose.ui.graphics.vector.Ima
 }
 
 @Composable
-private fun EmergencyContactCard(icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Color, label: String, name: String, address: String, number: String, onCall: () -> Unit) {
+private fun EmergencyContactCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: Color,
+    label: String,
+    name: String,
+    address: String,
+    number: String,
+    onCall: () -> Unit,
+    onDirections: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp)).padding(16.dp),
@@ -635,10 +684,18 @@ private fun EmergencyContactCard(icon: androidx.compose.ui.graphics.vector.Image
             Text(name, fontFamily = PlayfairDisplay, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
             Text(address, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
-        Box(
-            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.15f)).clickable(onClick = onCall),
-            contentAlignment = Alignment.Center
-        ) { Icon(Icons.Filled.Call, contentDescription = "Call", tint = accent, modifier = Modifier.size(20.dp)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (onDirections != null) {
+                Box(
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)).clickable(onClick = onDirections),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Filled.Directions, contentDescription = "Directions", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
+            }
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.15f)).clickable(onClick = onCall),
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Filled.Call, contentDescription = "Call", tint = accent, modifier = Modifier.size(20.dp)) }
+        }
     }
 }
 

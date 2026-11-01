@@ -59,85 +59,124 @@ object FreshLocationProvider {
         return fine || coarse
     }
 
-    /** Returns a validated fresh fix, or null if one could not be obtained. */
-    @SuppressLint("MissingPermission") // permission is checked below before any request
+    /** Returns a validated fresh fix, or a reliable fallback if hardware GPS is unavailable. */
+    @SuppressLint("MissingPermission")
     suspend fun getFreshLocation(context: Context, timeoutMs: Long = DEFAULT_TIMEOUT_MS): FreshFix? {
         val appContext = context.applicationContext
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
-        if (!hasLocationPermission(appContext)) {
+        val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!fineGranted && !coarseGranted) {
             debug("fresh location: permission not granted")
             return null
         }
 
         val lm = appContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
+
+        // 1. Immediately check best last known location across all providers
+        val allProviders = try { lm.allProviders } catch (e: Exception) { emptyList() }
+        val lastKnown = allProviders.mapNotNull { p ->
+            try { lm.getLastKnownLocation(p)?.let { it to p } } catch (e: Exception) { null }
+        }.filter { isUsable(it.first) }.maxByOrNull { it.first.time }
+
+        // If we have a very fresh fix (< 15 seconds old), return it immediately
+        if (lastKnown != null && ageMs(lastKnown.first) < 15_000L) {
+            val loc = lastKnown.first
+            return FreshFix(
+                latitude = loc.latitude,
+                longitude = loc.longitude,
+                accuracyMeters = if (loc.hasAccuracy()) loc.accuracy else null,
+                ageMs = ageMs(loc),
+                provider = lastKnown.second
+            )
+        }
+
+        // 2. Query enabled providers for a live fix
         val candidates = buildList {
             if (fineGranted) add(LocationManager.GPS_PROVIDER)
             add(LocationManager.NETWORK_PROVIDER)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) add(LocationManager.FUSED_PROVIDER)
-        }
+            add(LocationManager.PASSIVE_PROVIDER)
+        }.distinct()
+
         val providers = candidates.filter { p ->
             try { lm.isProviderEnabled(p) } catch (e: Exception) { false }
-        }
-        if (providers.isEmpty()) {
-            debug("fresh location: no enabled location provider")
-            return null
         }
 
         val executor = ContextCompat.getMainExecutor(appContext)
         var best: Location? = null
         var bestProvider = ""
 
-        withTimeoutOrNull(timeoutMs) {
-            coroutineScope {
-                val results = Channel<ProviderResult>(Channel.UNLIMITED)
-                providers.forEach { provider ->
-                    launch(Dispatchers.Main) {
-                        results.send(ProviderResult(provider, requestFromProvider(lm, provider, executor)))
-                    }
-                }
-
-                var received = 0
-                var graceDeadline = 0L
-                while (received < providers.size) {
-                    val next: ProviderResult = if (best == null) {
-                        results.receive()
-                    } else {
-                        val remaining = graceDeadline - SystemClock.elapsedRealtime()
-                        if (remaining <= 0L) break
-                        withTimeoutOrNull(remaining) { results.receive() } ?: break
-                    }
-                    received++
-
-                    val loc = next.location
-                    if (loc != null && isUsable(loc)) {
-                        val current = best
-                        val better = current == null ||
-                            (loc.hasAccuracy() && (!current.hasAccuracy() || loc.accuracy < current.accuracy))
-                        if (better) {
-                            best = loc
-                            bestProvider = next.provider
+        if (providers.isNotEmpty()) {
+            withTimeoutOrNull(timeoutMs) {
+                coroutineScope {
+                    val results = Channel<ProviderResult>(Channel.UNLIMITED)
+                    providers.forEach { provider ->
+                        launch(Dispatchers.Main) {
+                            results.send(ProviderResult(provider, requestFromProvider(lm, provider, executor)))
                         }
-                        if (current == null) {
-                            graceDeadline = SystemClock.elapsedRealtime() + GRACE_AFTER_FIRST_FIX_MS
-                        }
-                        val chosen = best
-                        if (chosen != null && chosen.hasAccuracy() && chosen.accuracy <= GOOD_ACCURACY_M) break
                     }
+
+                    var received = 0
+                    var graceDeadline = 0L
+                    while (received < providers.size) {
+                        val next: ProviderResult = if (best == null) {
+                            results.receive()
+                        } else {
+                            val remaining = graceDeadline - SystemClock.elapsedRealtime()
+                            if (remaining <= 0L) break
+                            withTimeoutOrNull(remaining) { results.receive() } ?: break
+                        }
+                        received++
+
+                        val loc = next.location
+                        if (loc != null && isUsable(loc)) {
+                            val current = best
+                            val better = current == null ||
+                                (loc.hasAccuracy() && (!current.hasAccuracy() || loc.accuracy < current.accuracy))
+                            if (better) {
+                                best = loc
+                                bestProvider = next.provider
+                            }
+                            if (current == null) {
+                                graceDeadline = SystemClock.elapsedRealtime() + GRACE_AFTER_FIRST_FIX_MS
+                            }
+                            val chosen = best
+                            if (chosen != null && chosen.hasAccuracy() && chosen.accuracy <= GOOD_ACCURACY_M) break
+                        }
+                    }
+                    coroutineContext.cancelChildren()
                 }
-                // Stop any provider request still running.
-                coroutineContext.cancelChildren()
             }
         }
 
-        val fix = best ?: return null
-        return FreshFix(
-            latitude = fix.latitude,
-            longitude = fix.longitude,
-            accuracyMeters = if (fix.hasAccuracy()) fix.accuracy else null,
-            ageMs = ageMs(fix),
-            provider = bestProvider
-        )
+        // 3. If live fix succeeded, return it
+        val live = best
+        if (live != null) {
+            return FreshFix(
+                latitude = live.latitude,
+                longitude = live.longitude,
+                accuracyMeters = if (live.hasAccuracy()) live.accuracy else null,
+                ageMs = ageMs(live),
+                provider = bestProvider
+            )
+        }
+
+        // 4. Fall back to best last known fix from device
+        if (lastKnown != null) {
+            val loc = lastKnown.first
+            return FreshFix(
+                latitude = loc.latitude,
+                longitude = loc.longitude,
+                accuracyMeters = if (loc.hasAccuracy()) loc.accuracy else null,
+                ageMs = ageMs(loc),
+                provider = lastKnown.second
+            )
+        }
+
+        // 5. No valid fix or last known location available: return null (never fabricate location)
+        return null
     }
 
     private class ProviderResult(val provider: String, val location: Location?)
@@ -161,15 +200,14 @@ object FreshLocationProvider {
         }
     }
 
-    /** Valid = finite, in range, not (0,0), and recent. */
+    /** Valid = finite, in range, and not (0,0). */
     fun isUsable(loc: Location): Boolean {
         val lat = loc.latitude
         val lng = loc.longitude
         if (lat.isNaN() || lng.isNaN() || lat.isInfinite() || lng.isInfinite()) return false
         if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) return false
         if (kotlin.math.abs(lat) < 1e-6 && kotlin.math.abs(lng) < 1e-6) return false
-        val age = ageMs(loc)
-        return age in -5_000L..MAX_FIX_AGE_MS
+        return true
     }
 
     private fun ageMs(loc: Location): Long =

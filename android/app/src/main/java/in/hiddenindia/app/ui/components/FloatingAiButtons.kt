@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import `in`.hiddenindia.app.ui.theme.JetBrainsMono
 
+import `in`.hiddenindia.app.ui.theme.LocalHiddenIndiaIsDark
+
 /**
  * Port of web src/components/common/FloatingAIButtons.tsx — the floating Translate +
  * "Ask The Place" pill that hovers above the bottom nav. On web this is scoped to the
@@ -39,6 +41,7 @@ fun FloatingAiButtons(
     onOpenAskAi: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalHiddenIndiaIsDark.current
     Column(
         modifier = modifier.padding(end = 16.dp, bottom = 16.dp),
         horizontalAlignment = Alignment.End,
@@ -46,12 +49,13 @@ fun FloatingAiButtons(
     ) {
         // 1. Language Assistant & Live Translation circular button
         Box2(
+            isDark = isDark,
             onClick = onOpenTranslator,
             content = {
                 Icon(
                     Icons.Filled.Translate,
                     contentDescription = "Translate & Language Assistant",
-                    tint = Color.White,
+                    tint = if (isDark) Color(0xFFFF8C00) else Color.White,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -62,7 +66,11 @@ fun FloatingAiButtons(
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
                 .background(MaterialTheme.colorScheme.primary)
-                .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(50))
+                .border(
+                    1.dp,
+                    if (isDark) Color(0xFFE67E00).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.3f),
+                    RoundedCornerShape(50)
+                )
                 .clickable(onClick = onOpenAskAi)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -87,13 +95,15 @@ fun FloatingAiButtons(
 }
 
 @Composable
-private fun Box2(onClick: () -> Unit, content: @Composable () -> Unit) {
+private fun Box2(isDark: Boolean, onClick: () -> Unit, content: @Composable () -> Unit) {
+    val bg = if (isDark) Color(0xFF141414) else Color(0xFF1B263B)
+    val borderCol = if (isDark) Color(0xFFFF8C00).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.2f)
     androidx.compose.foundation.layout.Box(
         modifier = Modifier
             .size(48.dp)
             .clip(CircleShape)
-            .background(Color(0xFF1B263B))
-            .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+            .background(bg)
+            .border(1.dp, borderCol, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

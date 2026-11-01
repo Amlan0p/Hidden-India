@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import `in`.hiddenindia.app.R
 import `in`.hiddenindia.app.ui.theme.DarkPrimary
-import `in`.hiddenindia.app.ui.theme.DarkSurface
+import `in`.hiddenindia.app.ui.theme.DarkPrimaryDark
+import `in`.hiddenindia.app.ui.theme.DarkBackground
 import `in`.hiddenindia.app.ui.theme.JetBrainsMono
 import `in`.hiddenindia.app.ui.theme.LightPrimary
 import `in`.hiddenindia.app.ui.theme.PlayfairDisplay
@@ -49,7 +50,7 @@ fun HiddenIndiaLogo(
     darkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
 ) {
     val gradient = if (darkTheme) {
-        Brush.linearGradient(listOf(DarkPrimary, Color(0xFF00B359)))
+        Brush.linearGradient(listOf(DarkPrimary, DarkPrimaryDark))
     } else {
         Brush.linearGradient(listOf(LightPrimary, Color(0xFFE6851F)))
     }
@@ -65,7 +66,7 @@ fun HiddenIndiaLogo(
                 painter = painterResource(R.drawable.ic_temple_hindu),
                 contentDescription = null,
                 modifier = Modifier.size(size.icon),
-                colorFilter = ColorFilter.tint(if (darkTheme) DarkSurface else Color.White)
+                colorFilter = ColorFilter.tint(if (darkTheme) Color.Black else Color.White)
             )
         }
     }

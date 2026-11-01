@@ -37,7 +37,7 @@ Open `android/app/build.gradle` and set the URL Render gave you (keep the traili
 ```groovy
 buildConfigField "String", "API_BASE_URL", "\"https://<your-service>.onrender.com/\""
 ```
-It currently points to the old service (`https://tourism-3ev1.onrender.com/`).
+It currently points to `https://hidden-india-backend.onrender.com/`.
 
 ## 4. Build the app
 Open `android/` in Android Studio and run, or from the command line:

@@ -86,7 +86,7 @@ function sanitizeGroqModel(rawModel?: string): string {
 
 function getActiveGroqApiKey(): string {
   const envKey = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim().replace(/^["'`]|["'`]$/g, '') : '';
-  if (envKey && envKey !== 'MY_GROQ_API_KEY' && !envKey.startsWith('gsk_IGIRCr') && envKey.length > 20) {
+  if (envKey && envKey !== 'MY_GROQ_API_KEY' && envKey.length > 20) {
     return envKey;
   }
   return '';
@@ -831,6 +831,103 @@ app.get('/api/geo/nearest-emergency', async (req: Request, res: Response) => {
   const hit = emergencyCache.get(cacheKey);
   if (hit && Date.now() - hit.at < EMERGENCY_CACHE_TTL_MS) {
     return res.json(hit.data);
+  }
+
+  // If Geoapify API key is set, use Geoapify Places API for fast, parallel place discovery
+  const geoapifyApiKey = process.env.GEOAPIFY_API_KEY;
+  if (geoapifyApiKey) {
+    try {
+      const fetchGeoapifyPlaces = async (category: string, radiusM: number) => {
+        const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lng},${lat},${radiusM}&bias=proximity:${lng},${lat}&limit=20&apiKey=${geoapifyApiKey}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
+          const response = await fetch(url, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+          if (!response.ok) return [];
+          const json = await response.json();
+          const features = Array.isArray(json?.features) ? json.features : [];
+          const items = features.map((f: any) => {
+            const props = f.properties || {};
+            const fLat = props.lat ?? f.geometry?.coordinates?.[1];
+            const fLng = props.lon ?? f.geometry?.coordinates?.[0];
+            if (!Number.isFinite(Number(fLat)) || !Number.isFinite(Number(fLng))) return null;
+            const name = props.name || props.address_line1 || props.formatted;
+            if (!name) return null;
+            const address = props.formatted || [props.address_line1, props.city, props.state].filter(Boolean).join(', ');
+            const defaultPhone = category.includes('hospital') ? '108' : '112';
+            const phone = props.contact?.phone || props.datasource?.raw?.phone || defaultPhone;
+            const distKm = props.distance ? Math.round((props.distance / 1000) * 10) / 10 : Math.round(distanceKm(lat, lng, Number(fLat), Number(fLng)) * 10) / 10;
+            return {
+              name,
+              address: address || undefined,
+              phone,
+              lat: Number(fLat),
+              lng: Number(fLng),
+              distanceKm: distKm
+            };
+          }).filter(Boolean);
+
+          const seen = new Set<string>();
+          const unique = items.filter((item: any) => {
+            const key = item.name.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          return unique.sort((a: any, b: any) => a.distanceKm - b.distanceKm);
+        } catch (err) {
+          return [];
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
+
+      // Search hospitals and police stations simultaneously in parallel (initial 5 km)
+      let [hospitals, policeStations] = await Promise.all([
+        fetchGeoapifyPlaces('healthcare.hospital', 5000),
+        fetchGeoapifyPlaces('service.police', 5000)
+      ]);
+
+      // If fewer than 2 results found in 5 km, expand radius to 15 km to ensure adequate choices
+      if (hospitals.length < 2) {
+        const expandedHospitals = await fetchGeoapifyPlaces('healthcare.hospital', 15000);
+        const merged = [...hospitals, ...expandedHospitals];
+        const seen = new Set<string>();
+        hospitals = merged.filter((item: any) => {
+          const key = item.name.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).sort((a: any, b: any) => a.distanceKm - b.distanceKm);
+      }
+
+      if (policeStations.length < 2) {
+        const expandedPolice = await fetchGeoapifyPlaces('service.police', 15000);
+        const merged = [...policeStations, ...expandedPolice];
+        const seen = new Set<string>();
+        policeStations = merged.filter((item: any) => {
+          const key = item.name.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).sort((a: any, b: any) => a.distanceKm - b.distanceKm);
+      }
+
+      if (hospitals.length > 0 || policeStations.length > 0) {
+        const payload = {
+          hospital: hospitals[0] || null,
+          police: policeStations[0] || null,
+          hospitalList: hospitals,
+          policeList: policeStations
+        };
+        emergencyCache.set(cacheKey, { data: payload, at: Date.now() });
+        console.log(`Geoapify emergency lookup success: ${lat.toFixed(5)},${lng.toFixed(5)} -> hospital=${payload.hospital?.name || 'none'}, police=${payload.police?.name || 'none'}`);
+        return res.json(payload);
+      }
+    } catch (geoapifyError) {
+      console.warn('Geoapify Places API lookup failed, falling back to Overpass:', geoapifyError);
+    }
   }
 
   const toResult = (el: any) => {

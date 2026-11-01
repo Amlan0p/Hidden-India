@@ -13,19 +13,9 @@
                 android:endX="108"
                 android:endY="108"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#0A1323" />
-                <item android:offset="0.5" android:color="#121E33" />
-                <item android:offset="1.0" android:color="#1A2D4C" />
+                <item android:offset="0.0" android:color="#FF8C00" />
+                <item android:offset="1.0" android:color="#E67E00" />
             </gradient>
         </aapt:attr>
     </path>
-    <!-- Subtle cultural background ring -->
-    <path
-        android:pathData="M54,20 A34,34 0 1,0 54,88 A34,34 0 1,0 54,20"
-        android:strokeWidth="1.2"
-        android:strokeColor="#22FF9933" />
-    <path
-        android:pathData="M54,27 A27,27 0 1,0 54,81 A27,27 0 1,0 54,27"
-        android:strokeWidth="0.8"
-        android:strokeColor="#15FF9933" />
 </vector>
